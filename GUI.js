@@ -14,28 +14,17 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.`;
 
-// Legacy HTTP get function (can be replaced with fetch if preferred)
+// Legacy HTTP get function
 function http_get(url, callback, headers = [], method = "GET", content = null) {
   var request = new XMLHttpRequest();
   request.addEventListener("load", callback);
   request.open(method, url, true);
 
-  // Add any custom headers or auth here if needed for your target site
   for (const header of headers) {
     request.setRequestHeader(header[0], header[1]);
   }
 
   request.send(content);
-}
-
-function format_text(text, replacements) {
-  let formatted = text;
-  for (let key of Object.keys(replacements)) {
-    while (formatted.includes("{{" + key + "}}")) {
-      formatted = formatted.replace("{{" + key + "}}", replacements[key]);
-    }
-  }
-  return formatted;
 }
 
 function init() {
@@ -44,24 +33,32 @@ function init() {
   // Support for proxies or special environments if needed
   window.real_location = window.location;
 
-  // Check if running from GitHub (for instructions)
+  // Show instructions if run directly from GitHub
   if (window.real_location.hostname.includes("github.io") || window.real_location.hostname.includes("githubusercontent.com")) {
     alert("To use this, drag the bookmarklet into your bookmarks bar. Then, run it on any page.");
     return;
   }
 
-  // Load the popup on any site
+  // Proceed to open the popup on any site
   http_get(base_url + "/popup.html", open_popup);
 }
 
 function open_popup() {
-  const popup = window.open("about:blank", "", "width=760, height=450");
+  const popup = window.open("about:blank", "", "width=760,height=450");
   if (popup == null) {
-    alert("Error: Could not open the popup. Please enable popups and try again.");
+    alert("Error: Could not open the popup. Please enable popups for this site and try again.");
     return;
   }
+
+  // Bring popup to front / focus it (helps ensure it's on top)
+  popup.focus();
+
+  // Alert on the original tab to confirm it's open
+  alert("GUI is now open in a new popup window!");
+
   write_popup(popup, this.responseText);
 
+  // Optional: Reload popup content if closed and reopened (from original example)
   function popup_unload() {
     http_get(base_url + "/popup.html", function () {
       if (popup.closed) return;
@@ -75,7 +72,6 @@ function open_popup() {
 
 function write_popup(popup, html) {
   popup.document.base_url = base_url;
-  // Pass any data from the main page if needed (e.g., window.__YOUR_DATA__)
   popup.document.gpl_text = gpl_text;
   popup.document.write(html);
 
@@ -91,17 +87,15 @@ function write_popup(popup, html) {
     create_element("style", this.responseText);
   });
 
-  // Load main JS (for core GUI functionality)
+  // Load main JS
   http_get(base_url + "/main.js", function () {
     create_element("script", this.responseText);
   });
 
-  // Load loader script to add iframes inside the popup
+  // Load loader for iframes
   http_get(base_url + "/loader.js", function () {
     create_element("script", this.responseText);
   });
 }
-
-// Add any platform-specific handlers here if needed (e.g., for Canvas or Schoology)
 
 init();

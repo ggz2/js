@@ -3,7 +3,7 @@
 
 //this script mainly just serves to load the rest of the program
 
-var mirrors = ["https://edpuzzle.hs.vc"];
+var mirrors = ["https://CopperMusic.vercel.app"];
 
 async function try_mirror(mirror) {
   let r = await fetch(mirror + "/open.js");

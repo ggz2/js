@@ -46,13 +46,12 @@ function init() {
 
   // Check if running from GitHub (for instructions)
   if (window.real_location.hostname.includes("github.io") || window.real_location.hostname.includes("githubusercontent.com")) {
-    alert("To use this, drag the bookmarklet into your bookmarks bar. Then, run it on the target page.");
+    alert("To use this, drag the bookmarklet into your bookmarks bar. Then, run it on any page.");
     return;
-  } else if (/your-target-url-pattern-here/.test(window.real_location.href)) { // Replace with your regex, e.g., /https?:\/\/edpuzzle.com\/(lms\/lti\/)?assignments\/[a-f0-9]{1,30}\/(watch|view)/
-    http_get(base_url + "/popup.html", open_popup);
-  } else {
-    alert("Please run this script on the target page. For reference, the URL should look like this:\nhttps://example.com/your/path");
   }
+
+  // Load the popup on any site
+  http_get(base_url + "/popup.html", open_popup);
 }
 
 function open_popup() {

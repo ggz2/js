@@ -1,28 +1,54 @@
-// loader.js - Loads additional iframes into the popup from GitHub
-console.log('Loader script running in popup...');
+// loader.js - Automatically discovers and creates buttons for all test#.html files
 
-function loadIframes() {
-    const container = document.getElementById('iframe-container');
+const TEST_FOLDER = "https://ggz2.github.io/Copper-Music/test/";
+const container = document.getElementById("button-container");
 
-    // Clear existing iframes if needed
-    container.innerHTML = '';
+async function loadTests() {
+  container.innerHTML = `<div style="text-align:center; padding:50px; font-size:1.3em; opacity:0.8;">
+                         Scanning GitHub for tests...
+                        </div>`;
 
-    // Example iframe 1: Load from another file in the repo
-    const iframe1 = document.createElement('iframe');
-    iframe1.src = base_url + '/content1.html'; // Assumes content1.html exists in repo
-    iframe1.width = '100%';
-    iframe1.height = '200';
-    container.appendChild(iframe1);
+  try {
+    // Use GitHub API to list all files in the folder
+    const apiUrl = "https://api.github.com/repos/ggz2/Copper-Music/contents/test";
+    const response = await fetch(apiUrl);
+    const files = await response.json();
 
-    // Example iframe 2: Load from another file or external URL
-    const iframe2 = document.createElement('iframe');
-    iframe2.src = base_url + '/content2.html'; // Assumes content2.html exists
-    iframe2.width = '100%';
-    iframe2.height = '200';
-    container.appendChild(iframe2);
+    // Filter only files that match test<number>.html
+    const testFiles = files
+      .filter(f => f.name.match(/^test\d+\.html$/i))
+      .sort((a, b) => {
+        const numA = parseInt(a.name.match(/test(\d+)\.html/i)[1]);
+        const numB = parseInt(b.name.match(/test(\d+)\.html/i)[1]);
+        return numA - numB;
+      });
 
-    // Add more iframes dynamically as needed, e.g., based on user input or data
+    if (testFiles.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:50px;">
+                             No test#.html files found in /test folder
+                            </div>`;
+      return;
+    }
+
+    container.innerHTML = ""; // Clear loading message
+
+    testFiles.forEach(file => {
+      const num = file.name.match(/test(\d+)\.html/i)[1];
+      const btn = document.createElement("button");
+      btn.className = "test-btn";
+      btn.textContent = `Test ${num}`;
+      btn.onclick = () => showTest(TEST_FOLDER + file.name);
+      container.appendChild(btn);
+    });
+
+  } catch (err) {
+    console.error("Failed to load tests:", err);
+    container.innerHTML = `<div style="color:#ff6b6b; text-align:center; padding:30px;">
+                           Error loading tests.<br>
+                           Check console or GitHub folder path.
+                          </div>`;
+  }
 }
 
-// Auto-load on popup init, or wait for button click (as in main.js)
-loadIframes(); // Uncomment to auto-load
+// Auto-run when popup loads
+loadTests();

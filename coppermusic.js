@@ -87,15 +87,15 @@ function write_popup(popup, html) {
  //   create_element("style", this.responseText);
 //  });
 
-  // Load main JS
-//  http_get(base_url + "/main.js", function () {
-//    create_element("script", this.responseText);
-//  });
+   Load main JS
+  http_get(base_url + "/main.js", function () {
+    create_element("script", this.responseText);
+  });
 
-  // Load loader for iframes
-//  http_get(base_url + "/loader.js", function () {
-//    create_element("script", this.responseText);
-//  });
+   Load loader for iframes
+  http_get(base_url + "/loader.js", function () {
+    create_element("script", this.responseText);
+  });
 }
 
 init();

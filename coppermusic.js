@@ -1,65 +1,89 @@
-// coppermusic.js - Bookmarklet that opens Copper Music as an iframe overlay
+// coppermusic.js - Bookmarklet for Copper Music GUI (opens popup with your GitHub-hosted HTML)
 
-(function() {
-  // Show confirmation on the original tab
-  alert("Opening Copper Music in an overlay iframe!");
+const base_url = "https://raw.githubusercontent.com/ggz2/js/main";
 
-  // Create semi-transparent overlay background
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.background = 'rgba(0, 0, 0, 0.6)';
-  overlay.style.zIndex = '9999999';
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  overlay.style.backdropFilter = 'blur(4px)';
+// GPL text (optional)
+const gpl_text = `Copper Music bookmarklet
+Copyright (C) 2025 Td
 
-  // Create the iframe for Copper Music
-  const iframe = document.createElement('iframe');
-  iframe.src = 'https://coppermusic.vercel.app';
-  iframe.style.width = '90%';
-  iframe.style.maxWidth = '1000px';
-  iframe.style.height = '85%';
-  iframe.style.border = 'none';
-  iframe.style.borderRadius = '12px';
-  iframe.style.boxShadow = '0 10px 40px rgba(0,0,0,0.6)';
-  iframe.allow = 'autoplay; fullscreen'; // Optional: if your player needs these permissions
+This program is free software...`;  // shorten or remove if you want
 
-  overlay.appendChild(iframe);
+function http_get(url, callback, headers = [], method = "GET", content = null) {
+  var request = new XMLHttpRequest();
+  request.addEventListener("load", callback);
+  request.open(method, url, true);
+  for (const header of headers) {
+    request.setRequestHeader(header[0], header[1]);
+  }
+  request.send(content);
+}
 
-  // Close button
-  const closeBtn = document.createElement('button');
-  closeBtn.innerText = 'Close Copper Music';
-  closeBtn.style.position = 'absolute';
-  closeBtn.style.top = '20px';
-  closeBtn.style.right = '20px';
-  closeBtn.style.padding = '10px 20px';
-  closeBtn.style.background = '#e74c3c';
-  closeBtn.style.color = 'white';
-  closeBtn.style.border = 'none';
-  closeBtn.style.borderRadius = '8px';
-  closeBtn.style.fontSize = '16px';
-  closeBtn.style.cursor = 'pointer';
-  closeBtn.style.zIndex = '10000000';
-  closeBtn.onclick = function() {
-    document.body.removeChild(overlay);
-  };
+function init() {
+  console.info(gpl_text || "Copper Music starting...");
 
-  overlay.appendChild(closeBtn);
+  window.real_location = window.location;
 
-  // Optional: Close with Esc key
-  const escHandler = function(e) {
-    if (e.key === 'Escape') {
-      document.body.removeChild(overlay);
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
-  document.addEventListener('keydown', escHandler);
+  if (window.real_location.hostname.includes("github.io") || 
+      window.real_location.hostname.includes("githubusercontent.com")) {
+    alert("Drag this bookmarklet to your bar and run it on any page.");
+    return;
+  }
 
-  // Add to page
-  document.body.appendChild(overlay);
-})();
+  // FIXED: Fetch your popup.html from GitHub, not Vercel
+  http_get(base_url + "/popup.html", open_popup);
+}
+
+function open_popup() {
+  const popup = window.open("about:blank", "CopperMusic", "width=800,height=600");
+  if (!popup) {
+    alert("Popup blocked - please allow popups for this site and try again.");
+    return;
+  }
+
+  popup.focus();
+  alert("Copper Music GUI is now open in a popup!");
+
+  write_popup(popup, this.responseText);
+
+  function popup_unload() {
+    http_get(base_url + "/popup.html", function () {
+      if (popup.closed) return;
+      write_popup(popup, this.responseText);
+      popup.addEventListener("beforeunload", popup_unload);
+    });
+  }
+
+  popup.addEventListener("beforeunload", popup_unload);
+}
+
+function write_popup(popup, html) {
+  popup.document.base_url = base_url;
+  popup.document.gpl_text = gpl_text;
+  popup.document.open();
+  popup.document.write(html);
+  popup.document.close();
+
+  function create_element(tag, innerHTML) {
+    let element = popup.document.createElement(tag);
+    element.innerHTML = innerHTML;
+    popup.document.head.appendChild(element);
+    return element;
+  }
+
+  // Load CSS if you have it (uncomment if needed)
+  // http_get(base_url + "/styles/popup.css", function () {
+  //   create_element("style", this.responseText);
+  // });
+
+  // Load main.js
+  http_get(base_url + "/main.js", function () {
+    create_element("script", this.responseText);
+  });
+
+  // Load loader.js (your test menu logic)
+  http_get(base_url + "/loader.js", function () {
+    create_element("script", this.responseText);
+  });
+}
+
+init();
